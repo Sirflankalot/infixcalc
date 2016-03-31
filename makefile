@@ -2,7 +2,7 @@ WARNINGS = -Wall -Wextra -Wno-missing-field-initializers -Wno-sign-compare -Wno-
 STD = -std=c++1y
 OPTIMIZE = -O3
 
-CPP_FILES = $(wildcard *.cpp)
+CPP_FILES = $(wildcard src/*.cpp)
 OBJ_FILES = $(addprefix bin/,$(notdir $(CPP_FILES:.cpp=.o)))
 
 CXX=g++-5
@@ -16,7 +16,7 @@ calc: $(OBJ_FILES)
 	@echo Linking $@
 	@$(CXX) $(STD) -o $@ $^
 
-bin/%.o: %.cpp
+bin/%.o: src/%.cpp
 	@mkdir -p bin/
 	@echo CXX $@
 	@$(CXX) $(STD) $(WARNINGS) $(OPTIMIZE) -c -o $@ $<
