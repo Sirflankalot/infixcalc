@@ -2,19 +2,20 @@
 
 #include <vector>
 #include <memory>
+#include <string>
 #include "ast.hpp"
-#include "lexer.hpp"
 
 class ShuntingYardParser {
 private:
-	std::vector<std::shared_ptr<ASTNode>> operator_stack;
 	std::vector<std::shared_ptr<ASTNode>> final_stack;
-	std::vector<std::shared_ptr<ASTNode>> input_tokens;
-	bool finished = false;
+	std::vector<std::shared_ptr<ASTNode>> operator_stack;
+	std::vector<std::shared_ptr<ASTNode>> input_nodes;
+	bool lexer(std::string& in_str);
 public:
-	ShuntingYardParser(std::vector<Token> in_tokens);
-	bool add_tokens(std::vector<Token> in_tokens);
+	ShuntingYardParser(std::string& in_str);
+	bool add_tokens(std::string& in_str);
+	void print_input();
 	bool compute_ast();
-	std::vector<Token> get_rpn();
+	std::string get_rpn();
 	std::shared_ptr<ASTNode> get_ast();
 };
