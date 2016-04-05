@@ -21,22 +21,26 @@ bool ShuntingYardParser::lexer(std::string& in) {
 	auto isNumber = [](char v) { return ('0' <= v && v <= '9') || v == '-' || v == '.'; };
 	auto isLetter = [](char v) { return ('A' <= v && v <= 'Z') || ('a' <= v && v <= 'z'); };
 
+	bool stained = false;
+
 	for (int i = 0; i < in.size();) {
 		std::shared_ptr<ASTNode> cur_node;
 
-		if (isNumber(in[i])) {
+		if (isNumber(in[i]) && !stained) {
 			double   num = 0.0;
 			bool     neg = false;
 			int    start = i;
 			
-			if (in[i] == '-') {                           //If it's a dash, the number is negitive
+			if (in[i] == '-') {                             //If it's a dash, the number is negitive
 				neg = true;
-				if (i+1 < in.size()){                     //Only advance if you can
+				if (i+1 < in.size()){                       //Only advance if you can
 					i++;
-					if ( !isDigit(in[i]) ||               //If the next number isn't a digit,
-					    (input_nodes.size() &&            //(Short circut check for an empty node stack)
-					     !input_nodes.back()->is_op())) { //Or if the last node wasn't an operator
-						i--;                              //it's meant to be a minus sign.
+					if ( !isDigit(in[i]) ||                 //If the next number isn't a digit,
+					    (input_nodes.size() &&              //(Short circut check for an empty node stack)
+					     !input_nodes.back()->is_op() &&    //Or if the last node wasn't an operator
+					      !input_nodes.back()->is_par())) { //Or a parenthesis
+						i--;                                //it's meant to be a minus sign.
+						stained = true;
 						continue;
 					}
 				}
@@ -80,6 +84,7 @@ bool ShuntingYardParser::lexer(std::string& in) {
 			//When I get around to supporting names
 			//cur_node = std::make_shared<ASTNode_Name> (name);
 			//cur_node-> set_info(start, i);
+
 		}
 
 		else {
@@ -118,6 +123,7 @@ bool ShuntingYardParser::lexer(std::string& in) {
 			}
 		}
 
+		stained = false;
 		input_nodes.push_back(cur_node);
 		i++;
 	}
