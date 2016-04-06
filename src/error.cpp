@@ -31,5 +31,8 @@ void Error::print(std::ostream& out) {
 		case UNEXPECTED_OPERATOR:
 			out << location << ": Unexpected operator \"" << symbol << "\"\n";
 			break;
+		case NOT_SUPPORTED:
+			out << location << ": Names and functions are silently ignored \"" << symbol << "\"\n";
+			break;
 	}
 }

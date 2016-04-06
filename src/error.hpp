@@ -5,7 +5,7 @@
 #include <string>
 
 enum ErrorType : char {
-	UNMATCHED_PAREN, UNEXPECTED_OPERATOR
+	UNMATCHED_PAREN, UNEXPECTED_OPERATOR, NOT_SUPPORTED
 };
 
 class Error {

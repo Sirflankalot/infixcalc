@@ -82,7 +82,13 @@ bool ShuntingYardParser::lexer(std::string& in) {
 			}
 
 			name = in.substr(start, i-start);
-			i--;
+
+			std::string s = name;
+			Error e (NOT_SUPPORTED, s, start+1, false);
+			errors.push_back(e);
+
+			//i++;
+			continue;
 
 			//When I get around to supporting names
 			//cur_node = std::make_shared<ASTNode_Name> (name);
@@ -196,7 +202,7 @@ bool ShuntingYardParser::compute_ast() {
 		}
 		else {
 			std::string s = input_string.substr(node->get_start(),node->get_enddist());
-			Error e (UNEXPECTED_OPERATOR, s, node->get_start());
+			Error e (UNEXPECTED_OPERATOR, s, node->get_start()+1);
 			errors.push_back(e);
 		}
 	};
@@ -230,7 +236,7 @@ bool ShuntingYardParser::compute_ast() {
 
 			if (operator_stack.size() == 0) {
 				std::string s = input_string.substr(n->get_start(),n->get_enddist());
-				Error e (UNMATCHED_PAREN, s, n->get_start());
+				Error e (UNMATCHED_PAREN, s, n->get_start()+1);
 				errors.push_back(e);
 			}
 
@@ -263,7 +269,7 @@ bool ShuntingYardParser::compute_ast() {
 		auto n = operator_stack.back();
 		if (n->get_type() == LPAR) {
 			std::string s = input_string.substr(n->get_start(),n->get_enddist());
-			Error e (UNMATCHED_PAREN, s, n->get_start(), false);
+			Error e (UNMATCHED_PAREN, s, n->get_start()+1, false);
 			errors.push_back(e);
 
 			operator_stack.pop_back();
@@ -271,7 +277,7 @@ bool ShuntingYardParser::compute_ast() {
 
 		else if (n->get_type() == RPAR) {
 			std::string s = input_string.substr(n->get_start(),n->get_enddist());
-			Error e (UNMATCHED_PAREN, s, n->get_start());
+			Error e (UNMATCHED_PAREN, s, n->get_start()+1);
 			errors.push_back(e);
 
 			operator_stack.pop_back();
