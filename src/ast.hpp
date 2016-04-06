@@ -15,6 +15,9 @@ protected:
 public:
 	void set_info(int s);
 	void set_info(int s, int e);
+	int  get_start()          { return pos_start; };
+	int  get_end()            { return pos_end; };
+	int  get_enddist()        { return pos_end-pos_start; };
 	virtual double compute () = 0;
 	virtual NodeType get_type() = 0;
 	virtual long get_precedence() = 0;

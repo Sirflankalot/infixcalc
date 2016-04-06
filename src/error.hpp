@@ -4,23 +4,18 @@
 #include <vector>
 #include <string>
 
+enum ErrorType : char {
+	UNMATCHED_PAREN, UNEXPECTED_OPERATOR
+};
+
 class Error {
 private:
 	std::string symbol;
+	ErrorType et;
 	int location;
 	bool error;
 public:
-	Error(std::string& nm, int loc, bool err);
+	Error(ErrorType e, std::string& nm, int loc, bool err=true);
+	bool is_error();
 	void print(std::ostream& out = std::cout);
-};
-
-class ErrorServer {
-private:
-	std::vector<Error> errors;
-	std::ostream& os;
-public:
-	ErrorServer(std::ostream& o = std::cout);
-	void add_error(Error e);
-	void add_error(std::string nm, int loc, bool err);
-	void print();
 };

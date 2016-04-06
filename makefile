@@ -9,7 +9,7 @@ CXX=g++-5
 
 all: calc
 
-debug: OPTIMIZE = -Og -g
+debug: OPTIMIZE = -Og -g -D DEBUG
 debug: calc
 
 calc: $(OBJ_FILES)

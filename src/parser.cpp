@@ -3,12 +3,15 @@
 #include <iostream>
 #include "ast.hpp"
 #include "parser.hpp"
+#include "error.hpp"
 
 ShuntingYardParser::ShuntingYardParser (std::string& in) {
 	this->add_tokens(in);
 }
 
 bool ShuntingYardParser::add_tokens(std::string& in) {
+	input_string = in;
+
 	this->lexer(in);
 
 	final_stack.reserve(input_nodes.size());
@@ -119,6 +122,7 @@ bool ShuntingYardParser::lexer(std::string& in) {
 					opset();
 					break;
 				default:
+					i++;
 					continue;
 			}
 		}
@@ -133,40 +137,169 @@ bool ShuntingYardParser::lexer(std::string& in) {
 
 void ShuntingYardParser::print_input() {
 	for (auto i : input_nodes) {
-		switch (i->get_type()) {
-			case LITERAL:
-				std::cout << i->compute();
-				break;
-			case ADD:
-				std::cout << '+';
-				break;
-			case SUB:
-				std::cout << '-';
-				break;
-			case MUL:
-				std::cout << '*';
-				break;
-			case DIV:
-				std::cout << '/';
-				break;
-			case EXP:
-				std::cout << '^';
-				break;
-			case LPAR:
-				std::cout << '(';
-				break;
-			case RPAR:
-				std::cout << ')';
-				break;
-			default:
-				break;
-		}
+		print_node(i);
 		std::cout << "\n";
 	}
 }
 
+void ShuntingYardParser::print_node(std::shared_ptr<ASTNode> n) {
+	switch (n->get_type()) {
+		case LITERAL:
+			std::cout << n->compute();
+			break;
+		case ADD:
+			std::cout << '+';
+			break;
+		case SUB:
+			std::cout << '-';
+			break;
+		case MUL:
+			std::cout << '*';
+			break;
+		case DIV:
+			std::cout << '/';
+			break;
+		case EXP:
+			std::cout << '^';
+			break;
+		case LPAR:
+			std::cout << '(';
+			break;
+		case RPAR:
+			std::cout << ')';
+			break;
+		default:
+			break;
+	}
+
+}
+
 bool ShuntingYardParser::compute_ast() {
-	
-	
-	return true;
+	auto push_op_to_final = [this](std::shared_ptr<ASTNode> node) {
+		if (final_stack.size() >= 2) {
+			auto nodeR = final_stack.back();
+			final_stack.pop_back();
+
+			auto nodeL = final_stack.back();
+			final_stack.pop_back();
+
+			#ifdef DEBUG
+			std::cout << "DEBUG: ";
+			print_node(nodeL);
+			print_node(node);
+			print_node(nodeR);
+			std::cout << "\n";
+			#endif
+
+			node->set(std::move(nodeL), std::move(nodeR));
+			final_stack.push_back(std::move(node));
+		}
+		else {
+			std::string s = input_string.substr(node->get_start(),node->get_enddist());
+			Error e (UNEXPECTED_OPERATOR, s, node->get_start());
+			errors.push_back(e);
+		}
+	};
+
+	for (auto n : input_nodes) {
+		if (n->is_literal()) {
+			final_stack.push_back(n);
+		}
+		else if (n->is_op()) {
+			if (operator_stack.size() != 0) {
+				auto osnp = operator_stack.back()->get_precedence();
+				auto cura = n->get_associativity();
+				auto curp = n->get_precedence();
+				if ((!cura && curp <= osnp) || (cura && curp < osnp)) {
+					push_op_to_final(operator_stack.back());
+					operator_stack.pop_back();
+				}
+			}
+			operator_stack.push_back(n);
+		}
+
+		else if (n->is_par() && n->get_type() == LPAR) {
+			operator_stack.push_back(n);
+		}
+
+		else if (n->is_par() && n->get_type() == RPAR) {
+			while (operator_stack.size() && operator_stack.back()->get_type() != LPAR) {
+				push_op_to_final(operator_stack.back());
+				operator_stack.pop_back();
+			}
+
+			if (operator_stack.size() == 0) {
+				std::string s = input_string.substr(n->get_start(),n->get_enddist());
+				Error e (UNMATCHED_PAREN, s, n->get_start());
+				errors.push_back(e);
+			}
+
+			else if (operator_stack.back()->get_type() == LPAR) {
+				operator_stack.pop_back();
+			}
+
+		}
+
+		#ifdef DEBUG
+
+		std::cout << "STACK: ";
+		for (auto i : operator_stack) {
+			print_node(i);
+			std::cout << " ";
+		}
+		std::cout << "\n";
+
+		std::cout << "FINAL: ";
+		for (auto i : final_stack) {
+			print_node(i);
+			std::cout << " ";
+		}
+		std::cout << "\n\n";
+
+		#endif
+	}
+
+	while (operator_stack.size()) {
+		auto n = operator_stack.back();
+		if (n->get_type() == LPAR) {
+			std::string s = input_string.substr(n->get_start(),n->get_enddist());
+			Error e (UNMATCHED_PAREN, s, n->get_start(), false);
+			errors.push_back(e);
+
+			operator_stack.pop_back();
+		}
+
+		else if (n->get_type() == RPAR) {
+			std::string s = input_string.substr(n->get_start(),n->get_enddist());
+			Error e (UNMATCHED_PAREN, s, n->get_start());
+			errors.push_back(e);
+
+			operator_stack.pop_back();
+			break;
+		}
+
+		else {
+			push_op_to_final(operator_stack.back());
+			operator_stack.pop_back();
+		}
+	}
+
+	bool error = false;
+	for (Error e : errors) {
+		e.print();
+		if (e.is_error()) {
+			error = true;
+		}
+	}
+
+	if (error){
+		return false;
+	}
+	else {
+		return true;
+	}
+}
+
+double ShuntingYardParser::answer() {
+	return final_stack[0]->compute();
 }
